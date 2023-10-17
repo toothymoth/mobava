@@ -1,0 +1,4 @@
+Библиотеки для python(разумеется его тоже надо скачать) есть в файле req.txt, команда в консоль: python -m pip install -r req.txt
+Айпи и порт находятся в файлах const.py и web/geoserver.py (+Для геосервера меняем и в apk)
+Чтобы получить config на сервер запустите python скрипт - updater/update_config.py
+Запускаете web/geoserver.py и server.py
