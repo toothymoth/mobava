@@ -73,8 +73,13 @@ class Furn(Module):
                     return
                 if not isNew:
                     await self.del_furn(furn, client)
+                else:
+                    add_comfort = self.server.frn[furn["tpid"]]["rating"]
+                    await self.server.redis.incrby(f"mob:{client.uid}:hrt", int(add_comfort or 0))
                 await self.add_furn(furn, client)
             elif type_ == 2:
+                add_comfort = self.server.frn[furn["tpid"]]["rating"]
+                await self.server.redis.decrby(f"mob:{client.uid}:hrt", int(add_comfort or 0))
                 await self.server.inv[client.uid].add_item(furn["tpid"], "frn")
                 await self.del_furn(furn, client)
         room_items = {'r': await self.server.get_room(client.room), 'lt': 0}
