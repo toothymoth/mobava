@@ -70,7 +70,7 @@ async def gen_plr(server, uid):
     plr["usrinf"] = {'sid': int(uid), 'rl': 4, 'lng': '', 'lcl': 'RU', 'al': 99}
     plr["ci"] = await city_info(server, uid)
     plr["onl"] = uid in server.online
-    plr["clths"] = await server.get_clothes(uid, 1)
+    plr["clths"] = await server.get_clothes(uid, 2)
     plr['res'] = {
         'slvr': int(await r.get(f"mob:{uid}:slvr") or 0),
         'gld': int(await r.get(f"mob:{uid}:gld") or 0),
