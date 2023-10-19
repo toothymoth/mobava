@@ -22,6 +22,7 @@ class Server:
         self.room = {}
         self.clothes = parserxml.Parser().parse_clothes()
         self.frn = parserxml.Parser().parse_furniture()
+        self.daily = parserxml.Parser().parse_daily_gift()
         for item in const.LIBRARIES:
             library = importlib.import_module(f"libraries.{item}")
             class_ = getattr(library, library.class_name)
