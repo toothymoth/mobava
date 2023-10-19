@@ -56,6 +56,16 @@ class Client:
         
     async def get_appearance(self):
         return await self.server.get_appearance(self.uid)
+
+    async def update_res(self):
+        r = self.server.redis
+        res = {
+            'slvr': int(await r.get(f"mob:{self.uid}:slvr") or 0),
+            'gld': int(await r.get(f"mob:{self.uid}:gld") or 0),
+            'enrg': int(await r.get(f"mob:{self.uid}:enrg") or 0),
+            'emd': int(await r.get(f"mob:{self.uid}:emd") or 0)
+        }
+        await self.send({'data': {'res': res}, 'command': 'ntf.res'})
     
     async def update_inv(self):
         if self.uid not in self.server.inv:
