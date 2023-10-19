@@ -28,6 +28,7 @@ class House(Module):
         wear = await self.server.get_clothes(client.uid, type_=1)
         rooms = {'r': await self.server.get_room_all(client.uid), 'lt': 0}
         clths = await self.server.get_clothes(client.uid, type_=2)
+        await self.server.lib["tr"].bind["dr"]({}, client)
         return await client.send({
             'data': {'bklst': {'uids': []},
                      'politic': 'default',
