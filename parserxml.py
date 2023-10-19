@@ -111,3 +111,27 @@ class Parser:
             value = int(progress.attrib["value"])
             progresses[progress.attrib["reason"]] = value
         return progresses
+    
+    def parse_emotes(self):
+        doc = etree.parse("config/modules/emoteObjectMenu.xml")
+        root = doc.getroot()
+        action = []
+        for act in root.findall(".//item"):
+            value = act.attrib["action"]
+            action.append(value)
+        return action
+    
+    def parse_daily_gift(self):
+        doc = etree.parse("config/modules/dailyGift.xml")
+        root = doc.getroot()
+        gifts = {}
+        day = 1
+        for gift in root.findall(".//gift"):
+            if "typeId" in gift.attrib:
+                gifts[day] = {"type": "gm", "item": gift.attrib["typeId"],
+                              "count": int(gift.attrib["count"] or 1)}
+            else:
+                gifts[day] = {"type": "rs", "item": list(gift.attrib.keys())[0],
+                              "count": int(list(gift.attrib.values())[0])}
+            day+=1
+        return gifts
