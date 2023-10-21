@@ -122,16 +122,13 @@ class Parser:
         return action
     
     def parse_daily_gift(self):
-        doc = etree.parse("config/modules/dailyGift.xml")
+        doc = etree.parse("config/modules/dailyReward.xml")
         root = doc.getroot()
         gifts = {}
-        day = 1
-        for gift in root.findall(".//gift"):
-            if "typeId" in gift.attrib:
-                gifts[day] = {"type": "gm", "item": gift.attrib["typeId"],
-                              "count": int(gift.attrib["count"] or 1)}
-            else:
-                gifts[day] = {"type": "rs", "item": list(gift.attrib.keys())[0],
-                              "count": int(list(gift.attrib.values())[0])}
-            day+=1
+        for gift in root.findall(".//Reward"):
+            day = int(gift.getparent().getparent().attrib["id"])
+            gifts[day] = {"type": gift.attrib["category"], "item": gift.attrib["type"],
+                          "count": int(gift.attrib["count"] or 1)}
+            if day == 28:
+                break
         return gifts
