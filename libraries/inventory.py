@@ -32,10 +32,26 @@ class Inv(Module):
             else:
                 return
         inv = self.server.inv[client.uid]
-        if daily[day]["type"] == "rs":
-            await r.incrby(f"mob:{client.uid}:{_removeVowels(daily[day]['item'])}", daily[day]['count'])
-        elif daily[day]["type"] == "gm":
-            await inv.add_item(daily[day]['item'], "gm", daily[day]['count'])
+        type_ = daily[day]["type"]
+        count = daily[day]['count']
+        item = daily[day]["item"]
+        if type_ == "currency":
+            typeCurr = item
+            if typeCurr == "gold":
+                typeCurr = "gld"
+            elif typeCurr == "silver":
+                typeCurr = "slvr"
+            await r.incrby(f"mob:{client.uid}:{typeCurr}", count)
+        elif type_ in ["graffity", "joke"]:
+            await inv.add_item(item, "gm", count)
+        elif type_ == "energyItem":
+            await inv.add_item(item, "act", count)
+        elif type_ == "furinture":
+            await inv.add_item(item, "frn", count)
+        elif type_ == "clothes":
+            gender = await self.server.getGender(client.uid)
+            if item in self.server.clothes[gender]:
+                await inv.add_item(item, "cls", count)
         else:
             return
         await client.update_inv()
@@ -44,11 +60,3 @@ class Inv(Module):
             'data': {'day': day},
             'command': 'tr.dr'
         })
-
-
-def _removeVowels(string):
-    vowels = ["e", "y", "u", "i", "o", "a"]
-    new_string = string
-    for i in vowels:
-        new_string = new_string.lower().replace(i, "")
-    return new_string
