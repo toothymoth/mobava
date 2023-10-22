@@ -22,6 +22,7 @@ class Server:
         self.room = {}
         self.clothes = parserxml.Parser().parse_clothes()
         self.frn = parserxml.Parser().parse_furniture()
+        self.emotes = parserxml.Parser().parse_emotes()
         self.daily = parserxml.Parser().parse_daily_gift()
         for item in const.LIBRARIES:
             library = importlib.import_module(f"libraries.{item}")
@@ -101,7 +102,7 @@ class Server:
         if not uid:
             uid = await self._create_account(login)
         if uid not in self.online:
-            await self.redis.incrby(f"mob:{uid}:lvt", int(time.time()))
+            await self.redis.set(f"mob:{uid}:lvt", int(time.time()))
             self.online[uid] = client
         if uid not in self.inv:
             self.inv[uid] = inventory.Inventory(self, uid)
@@ -137,9 +138,9 @@ class Server:
             available = ["girlUnderdress1", "girlUnderdress2"]
         inv = self.inv[uid]
         for item in weared + available:
+            await inv.add_item(item, "cls")
             if item in weared:
                 await inv.change_wearing(item, True)
-            await inv.add_item(item, "cls")
     
     async def get_appearance(self, uid):
         apprnc = await self.redis.lrange(f"mob:{uid}:appearance", 0, -1)
@@ -168,6 +169,11 @@ class Server:
                          "id": room, "lev": int(uid), "l": 13, "nm": name_room})
         return data
     
+    async def getFurn(self, furn, client):
+        for item in await self.get_room(client.room):
+            if item["tpid"]+"_"+str(item["lid"]) == furn:
+                return item
+    
     async def get_room_items(self, uid, room):
         names = []
         pipe = self.redis.pipeline()
@@ -181,7 +187,11 @@ class Server:
         i = 0
         items = []
         for name in names:
-            name, lid = name.split("_")
+            try:
+                name, lid = name.split("_")
+            except ValueError:
+                lid = name.split("_")[-1]
+                name = "_".join(name.split("_")[:-1])
             item = result[i]
             option = options[i]
             try:
@@ -194,6 +204,8 @@ class Server:
                 await self.redis.delete(f"rooms:{uid}:{room}:items:"
                                         f"{name}_{lid}")
                 continue
+            except ValueError:
+                print(name, lid)
             for kek in option:
                 item = await self.redis.get(f"rooms:{uid}:{room}:items:"
                                             f"{name}_{lid}:{kek}")
