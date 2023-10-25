@@ -141,6 +141,8 @@ class Server:
             await inv.add_item(item, "cls")
             if item in weared:
                 await inv.change_wearing(item, True)
+        await inv.add_item("oct23_Loot_Coin", "lt", 10000)
+        await inv.add_item("AvaCoin", "lt", 10000)
     
     async def get_appearance(self, uid):
         apprnc = await self.redis.lrange(f"mob:{uid}:appearance", 0, -1)
