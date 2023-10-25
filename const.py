@@ -1,7 +1,7 @@
 HOST = "192.168.1.2"
 PORT = 9123
 
-LIBRARIES = ["house", "avatar", "client", "furniture", "outside", "billing", "passport", "inventory"]
+LIBRARIES = ["house", "avatar", "client", "furniture", "outside", "billing", "passport", "inventory", "craft"]
 
 ROOM_COUNT = 7
 
