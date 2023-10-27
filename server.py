@@ -20,6 +20,7 @@ class Server:
         self.lib = {}
         self.inv = {}
         self.room = {}
+        self.parser = parserxml.Parser()
         self.clothes = parserxml.Parser().parse_clothes()
         self.frn = parserxml.Parser().parse_furniture()
         self.emotes = parserxml.Parser().parse_emotes()
@@ -56,10 +57,10 @@ class Server:
         elif type_ == 17 or type_ == 2:
             await client.send({
                 'secretKey': None,
-                'zoneId': client.zoneId,
+                'zoneId': None,
                 'user': {'roomIds': [],
                          'name': None,
-                         'zoneId': client.zoneId,
+                         'zoneId': None,
                          'userId': client.uid},
                 'userId': client.uid
             }, type_=1)
@@ -207,7 +208,7 @@ class Server:
                                         f"{name}_{lid}")
                 continue
             except ValueError:
-                print(name, lid)
+                ...
             for kek in option:
                 item = await self.redis.get(f"rooms:{uid}:{room}:items:"
                                             f"{name}_{lid}:{kek}")
