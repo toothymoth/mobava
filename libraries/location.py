@@ -64,9 +64,13 @@ async def gen_plr(server, uid):
     plr["uid"] = uid
     plr["apprnc"] = await server.get_appearance(uid)
     loc = None
+    action = ""
+    pos = (-1.0, -1.0)
     if uid in server.online:
+        action = server.online[uid].act
+        pos = server.online[uid].pos
         loc = server.online[uid].room
-    plr["locinfo"] = {'st': 0, 'at': '', 'd': 4, 'x': -1.0, 'y': -1.0, 'l': loc}
+    plr["locinfo"] = {'st': 0, 'at': action, 'd': 4, 'x': pos[0], 'y': pos[1], 'l': loc}
     plr["usrinf"] = {'sid': int(uid), 'rl': 4, 'lng': '', 'lcl': 'RU', 'al': 99}
     plr["ci"] = await city_info(server, uid)
     plr["onl"] = uid in server.online
