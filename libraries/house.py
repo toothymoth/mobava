@@ -13,7 +13,7 @@ class House(Module):
     def __init__(self, server):
         super().__init__()
         self.server = server
-        self.bind = {"minfo": self.my_info, "gr": self.get_room, "r": self.room}
+        self.bind = {"minfo": self.my_info, "gr": self.get_room, "r": self.room, "oinfo": self.owner_info}
         
     async def my_info(self, msg, client):
         if not await client.get_appearance():
@@ -39,6 +39,26 @@ class House(Module):
                              'inv': inv, 'uid': client.uid, 'qc': {'q': []}, 'wi': {'wss': []},
                              'clths': clths, 'usrinf': plr['usrinf']}, 'tm': int(time.time())},
             'command': 'h.minfo'})
+    
+    async def owner_info(self, msg, client):
+        uid = msg["data"]["uid"]
+        appearance = await self.server.get_appearance(uid)
+        plr = await gen_plr(self.server,uid)
+        rooms = {'r': await self.server.get_room_all(uid), 'lt': 0}
+        wear = await self.server.get_clothes(uid, type_=1)
+        clths = await self.server.get_clothes(uid, type_=2)
+        await client.send({
+            'data': {'ath': False, 'plr': {
+                'uid': msg['data']['uid'],
+                'locinfo': plr['locinfo'],
+                'res': plr['res'], 'apprnc': appearance,
+                'ci': plr['ci'], 'hs': rooms,
+                'onl': True if uid in self.server.online else False,
+                'achc': {'ac': {}}, 'cs': wear,
+                'qc': {'q': []}, 'wi': {'wss': []},
+                'clths': clths, 'usrinf': plr['usrinf']
+            }, 'hs': rooms},
+            'command': 'h.oinfo'})
     
     async def get_room(self, msg, client):
         room_id = "_".join([msg["data"]["lid"], msg["data"]["gid"], msg["data"]["rid"]])
