@@ -3,7 +3,7 @@ class Location:
         self.server = server
         self.actions = ["ks", "hg", "gf",
                         "k", "sl", "lks",
-                        "hs", "aks"]
+                        "hs", "aks", "pd"]
     
     async def room(self, msg, client):
         subcmd = msg["command"].split(".")[-1]
@@ -26,6 +26,14 @@ class Location:
             if subcmd == "u":
                 client.position = (msg["data"]["x"], msg["data"]["y"])
                 client.act = "stand"
+            if subcmd in self.actions:
+                rl = self.server.lib["rl"]
+                uid = msg["data"]["tmid"]
+                link = await rl.get_link(client.uid, uid)
+                if link:
+                    await rl.add_progress({"ks": "kiss", "hg": "hug", "gf": "giveFive",
+                                           "k": "kickAss", "sl": "slap", "lks": "longKiss",
+                                           "hs": "handShake", "aks": "airKiss", "pd": "pairDance"}[subcmd], link)
             if "at" in msg["data"]:
                 if msg["data"]["at"]:
                     client.act = msg["data"]["at"]
@@ -38,7 +46,6 @@ class Location:
                 'data': {'rm': room_items},
                 'command': 'h.r.rfr'
             })
-            
 
 
 async def join_room(server, new_room, client):
@@ -76,10 +83,10 @@ async def gen_plr(server, uid):
     plr["onl"] = uid in server.online
     plr["clths"] = await server.get_clothes(uid, 2)
     plr['res'] = {
-        'slvr': int(await r.get(f"mob:{uid}:slvr") or 0),
-        'gld': int(await r.get(f"mob:{uid}:gld") or 0),
-        'enrg': int(await r.get(f"mob:{uid}:enrg") or 0),
-        'emd': int(await r.get(f"mob:{uid}:emd") or 0)
+        'slvr': await r.get(f"mob:{uid}:slvr"),
+        'gld': await r.get(f"mob:{uid}:gld"),
+        'enrg': await r.get(f"mob:{uid}:enrg"),
+        'emd': await r.get(f"mob:{uid}:emd")
     }
     return plr
 
@@ -113,6 +120,8 @@ async def city_info(server, uid):
 def get_pref_loc(room):
     if "house" in room:
         return "h"
+    elif "work" in room:
+        return "w"
     return "o"
 
 
