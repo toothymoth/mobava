@@ -26,11 +26,21 @@ class Inv(Module):
             if int(time.time()) - oldGiving >= 12 * 60 * 60:
                 if day+1 == 30:
                     await r.set(dailyModel + "day", 1)
+                    day = 1
                 else:
                     await r.incrby(dailyModel + "day", 1)
+                    day += 1
                 await r.set(dailyModel + "now", int(time.time()))
             else:
+                await client.send({
+                    'data': {'day': day, 'online': 1, 'collected': True, 'list': 1},
+                    'command': 'tr.dr'
+                })
                 return
+        await client.send({
+            'data': {'day': day+1, 'online': day+1, 'collected': False, 'list': day+1},
+            'command': 'tr.dr'
+        })
         inv = self.server.inv[client.uid]
         type_ = daily[day]["type"]
         count = daily[day]['count']
@@ -56,7 +66,3 @@ class Inv(Module):
             return
         await client.update_inv()
         await client.update_res()
-        await client.send({
-            'data': {'day': day},
-            'command': 'tr.dr'
-        })
