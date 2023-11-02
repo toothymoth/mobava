@@ -93,11 +93,15 @@ class Inventory():
             if not not_found:
                 type_items.append({"c": 1, "iid": iid, "tid": tid})
             await redis.srem(f"mob:{self.uid}:{ctp}", cloth)
+        if self.uid in self.server.online:
+            await self.server.online[self.uid].update_inv()
     
     async def setclothes(self, newcloth):
+        if newcloth in self.server.emotes:
+            return
         redis = self.server.redis
         clothes = self.server.clothes
-        ignore = ["boyUnderdress1"] + ["girlUnderdress1", "girlUnderdress2"]
+        ignore = ["boyUnderdress1"] + ["girlUnderdress1", "girlUnderdress2"] + self.server.emotes
         gender = await self.server.getGender(self.uid)
         ctp = await redis.get(f"mob:{self.uid}:wearing")
         type_items = self.inv["c"]["cls"]["it"]
