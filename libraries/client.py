@@ -12,7 +12,7 @@ class Client(Module):
         self.bind = {"st": self.set, "es": self.etags}
         
     async def set(self, msg, client):
-        await client.send({'data': {'cs': {'jr': {}, 'ir': {}, 'cid': msg["data"]["cid"]}}, 'command': 'cl.st'})
+        await client.send({'data': {'cs': {'jr': {}, 'ir': {}, 'cid': ""}}, 'command': 'cl.st'})
         
     async def etags(self, msg, client):
         await client.send({'data': {'c': [], 'clid': msg["data"]["clid"]}, 'command': 'cl.es'})
