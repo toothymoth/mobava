@@ -4,6 +4,7 @@ import aioredis
 import const
 import inventory
 import logging
+from libraries.location import refresh_avatar
 import parserxml
 import importlib
 from client import Client
@@ -25,6 +26,7 @@ class Server:
         self.frn = parserxml.Parser().parse_furniture()
         self.emotes = parserxml.Parser().parse_emotes()
         self.daily = parserxml.Parser().parse_daily_gift()
+        self.game_items = parserxml.Parser().parse_game_items()
         for item in const.LIBRARIES:
             library = importlib.import_module(f"libraries.{item}")
             class_ = getattr(library, library.class_name)
@@ -40,9 +42,11 @@ class Server:
             const.HOST, const.PORT
         )
         for lib in self.lib:
-            self.log(f"[{self.lib[lib].prefix}] Library is running")
             if hasattr(self.lib[lib], "_background"):
                 asyncio.create_task(self.lib[lib]._background())
+        debug = [self.lib[i].prefix for i in self.lib]
+        debug = ",".join(debug)
+        self.log(f"[{debug}] ({len(self.lib)}) lib is running...")
         asyncio.create_task(self._background())
         self.log("#Server is started#")
     
@@ -93,9 +97,20 @@ class Server:
     
     async def run_command(self, cmd, client):
         pref = cmd.split()[0]
+        r = self.redis
         if pref == "ssm":
             text = cmd.split("ssm")[1]
             await self.ssm(client.room, text)
+        elif pref == "lvl":
+            level = int(cmd.split()[1])
+            if 1 < level < 899:
+                await self.update_level(client, level)
+    
+    async def update_level(self, cli, lvl):
+        r = self.redis
+        await r.set(f"mob:{cli.uid}:exp", (lvl * (lvl - 1)) * 25)
+        await refresh_avatar(self, cli)
+        await cli.send({"data": {"lv": lvl}, "command": "q.nwlv"})
     
     async def auth(self, msg, client):
         login = msg["login"]
@@ -137,6 +152,7 @@ class Server:
         else:
             weared = ["girlShoes14", "girlPants9", "girlShirt12"]
             available = ["girlUnderdress1", "girlUnderdress2"]
+        available += self.emotes
         inv = self.inv[uid]
         for item in weared + available:
             await inv.add_item(item, "cls")
@@ -174,7 +190,7 @@ class Server:
     
     async def getFurn(self, furn, client):
         for item in await self.get_room(client.room):
-            if item["tpid"]+"_"+str(item["lid"]) == furn:
+            if item["tpid"] + "_" + str(item["lid"]) == furn:
                 return item
     
     async def get_room_items(self, uid, room):
@@ -208,7 +224,7 @@ class Server:
                                         f"{name}_{lid}")
                 continue
             except ValueError:
-                ...
+                print(name, lid)
             for kek in option:
                 item = await self.redis.get(f"rooms:{uid}:{room}:items:"
                                             f"{name}_{lid}:{kek}")
@@ -228,7 +244,7 @@ class Server:
             uid = owner
             name_room = await self.redis.get(f"rooms:{uid}:{room}:name")
             data = {"f": await self.get_room_items(uid, room), "w": 13,
-                         "id": room, "lev": int(uid), "l": 13, "nm": name_room}
+                    "id": room, "lev": int(uid), "l": 13, "nm": name_room}
             return data
     
     async def add_room_item(self, item, room, uid):
