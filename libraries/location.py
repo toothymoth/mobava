@@ -26,6 +26,8 @@ class Location:
             if subcmd == "u":
                 client.position = (msg["data"]["x"], msg["data"]["y"])
                 client.act = "stand"
+            if subcmd == "ca":
+                msg["data"]["uid"] = client.uid
             if subcmd in self.actions:
                 rl = self.server.lib["rl"]
                 uid = msg["data"]["tmid"]
