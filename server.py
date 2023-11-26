@@ -1,4 +1,6 @@
 import asyncio
+import base64
+import binascii
 import time
 import aioredis
 import const
@@ -114,9 +116,13 @@ class Server:
     
     async def auth(self, msg, client):
         login = msg["login"]
-        uid = await self.redis.get(f"mob:{login}:uid")
-        if not uid:
-            uid = await self._create_account(login)
+        xp101 = await self.log_101xp(login)
+        if xp101:
+            uid = xp101
+        else:
+            uid = await self.redis.get(f"mob:{login}:uid")
+            if not uid:
+                uid = await self._create_account(login)
         if uid not in self.online:
             await self.redis.set(f"mob:{uid}:lvt", int(time.time()))
             self.online[uid] = client
@@ -127,6 +133,23 @@ class Server:
         await client.send({'secretKey': login, 'zoneId': msg["zoneId"],
                            'user': {'roomIds': [], 'name': None, 'zoneId': msg["zoneId"], 'userId': uid},
                            'userId': uid}, type_=1)
+    
+    async def log_101xp(self, login):
+        params = {}
+        try:
+            params: dict = eval(base64.b64decode('.'.join(login.split('.')[1])).decode())
+        except binascii.Error:
+            return  # not 101xp
+        if int(params["sub"]):
+            r = self.redis
+            regModel = f'mob:101xp:{params["extra_params"]["mobile_id"]}'
+            if not await r.get(regModel):
+                uid = await self._create_account(login)
+                await r.set(regModel, params["sub"])
+                await r.set(regModel + ":uid", uid)
+            else:
+                uid = await r.get(regModel + ":uid")
+            return uid
     
     async def create_account(self, uid, gender):
         redis = self.redis
