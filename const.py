@@ -3,7 +3,7 @@ PORT = 9123
 
 LIBRARIES = ["house", "avatar", "client", "furniture", "outside", 
              "confirm", "relations", "player",
-             "billing", "passport", "inventory", "craft", "event", "house_service"]
+             "billing", "passport", "inventory", "craft", "event", "house_service", "rating"]
 
 ROOM_COUNT = 7
 
