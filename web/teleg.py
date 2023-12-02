@@ -8,7 +8,7 @@ from aiogram.utils import executor
 from aiogram.dispatcher.filters import Command
 import redis
 
-TOKEN = "6663087665:AAHSrLFl-9543xbBt6pUYUVr6LqkYLZkmPM"
+TOKEN = ""
 API = Bot(token=TOKEN)
 dr = Dispatcher(API)
 r = redis.Redis(decode_responses=True)
