@@ -10,6 +10,7 @@ from libraries.location import refresh_avatar
 import parserxml
 import importlib
 from client import Client
+import web.teleg as tg
 
 BACKGROUND_TIME = 60
 
@@ -46,11 +47,22 @@ class Server:
         for lib in self.lib:
             if hasattr(self.lib[lib], "_background"):
                 asyncio.create_task(self.lib[lib]._background())
-        debug = [self.lib[i].prefix for i in self.lib]
-        debug = ",".join(debug)
-        self.log(f"[{debug}] ({len(self.lib)}) lib is running...")
+        
+        i = 0
+        libs = list(self.lib.keys())
+        welcomeText = ""
+        while i < len(libs):
+            welcomeText += libs[i]
+            if i + 1 != len(libs):
+                welcomeText += ","
+            if not i % 5 and i:
+                welcomeText += "\n" + "	" * 4 + " "
+            i += 1
+        self.log(f"[{welcomeText}] ({len(self.lib)}) lib is running...")
         asyncio.create_task(self._background())
-        self.log("#Server is started#")
+        self.log(f"! Server is started ! : HOST {const.HOST} PORT {const.PORT}")
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(tg.Init(self))
     
     async def client_on(self, reader, writer):
         loop = asyncio.get_event_loop()
@@ -99,7 +111,6 @@ class Server:
     
     async def run_command(self, cmd, client):
         pref = cmd.split()[0]
-        r = self.redis
         if pref == "ssm":
             text = cmd.split("ssm")[1]
             await self.ssm(client.room, text)
@@ -116,6 +127,9 @@ class Server:
     
     async def auth(self, msg, client):
         login = msg["login"]
+        if const.CLOSED_SERVER:
+            await client.system_message(const.DESCRIPTION_CLOSED)
+            return
         xp101 = await self.log_101xp(login)
         if xp101:
             uid = xp101
@@ -327,10 +341,13 @@ class Server:
         log.info(message)
     
     async def _background(self):
-        await asyncio.sleep(BACKGROUND_TIME)
+        while True:
+            self.log(f"ONLINE: {len(self.online)}; "
+                     f"REG: {await self.redis.get('mob:uids')}; "
+                     f"EVENTS: {len(self.lib['ev'].events)}")
+            await asyncio.sleep(BACKGROUND_TIME)
     
     async def stop(self):
-        return
         self.server.close()
         await self.server.wait_closed()
 
