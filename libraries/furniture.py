@@ -26,6 +26,8 @@ class Furn(Module):
         redis = self.server.redis
         uid = client.uid
         room = client.room.split("_")[2]
+        if "lid" not in item:
+            item["lid"] = item['oid']
         item['oid'] = item["lid"]
         await redis.sadd(f"rooms:{uid}:{room}:items",
                          f"{item['tpid']}_{item['oid']}")
@@ -164,8 +166,6 @@ class Furn(Module):
                     if olditem["tpid"] + str(olditem["lid"]) == furn["tpid"] + str(furn["oid"]):
                         isNew = False
                         break
-                if not await self.server.inv[client.uid].take_item(furn["tpid"]) and isNew:
-                    return
                 if not isNew:
                     await self.del_furn(furn, client)
                 else:
@@ -182,7 +182,12 @@ class Furn(Module):
         room_items = {'r': await self.server.get_room(client.room), 'lt': 0}
         cityInfo = await city_info(self.server, client.uid)
         await client.update_inv()
-        return await client.send({
+        await client.send({
             'data': {'ci': cityInfo, 'hs': room_items},
             'command': 'frn.save'
+        })
+        room_items = await self.server.get_room(client.room, 2)
+        await self.server.send_everybody(client.room, {
+            'data': {'rm': room_items},
+            'command': 'h.r.rfr'
         })
