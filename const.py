@@ -7,6 +7,9 @@ LIBRARIES = ["house", "avatar", "client", "furniture", "outside",
 
 ROOM_COUNT = 7
 
+CLOSED_SERVER = False
+DESCRIPTION_CLOSED = "Закрыт до завтра. Обновляю сервер"
+
 room_items = [{'tpid': 'wall15', 'gtp': '', 'd': 3, 'lid': 1, 'x': 0.0, 'y': 0.0, 'z': 0.0, 'bid': '', 'lrd': 0},
               {'tpid': 'wall15', 'gtp': 'wllgrfft3', 'd': 5, 'lid': 2, 'x': 13.0, 'y': 0.0, 'z': 0.0, 'bid': '',
                'lrd': 0},
