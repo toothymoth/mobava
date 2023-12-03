@@ -3,3 +3,5 @@ aioredis==2.0.1
 Flask==2.0.3
 lxml==4.6.3
 redis==4.3.3
+nest-asyncio==1.5.8
+aiogram==2.22.2
