@@ -43,6 +43,11 @@ class Avatar(Module):
         
     async def clothes(self, msg, client):
         subcmd = msg["command"].split(".")[-1]
+        if "ctp" in msg["data"]:
+            r = self.server.redis
+            ctp = msg["data"]["ctp"]
+            if await r.get(f"mob:{client.uid}:wearing") != ctp:
+                await r.set(f"mob:{client.uid}:wearing", ctp)
         if subcmd == "buy":
             inv = self.server.inv[client.uid]
             await inv.add_item(msg["data"]["tpid"], "cls")
