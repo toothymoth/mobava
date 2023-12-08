@@ -118,6 +118,10 @@ class Server:
             level = int(cmd.split()[1])
             if 1 < level < 899:
                 await self.update_level(client, level)
+        elif pref == "ny24coin":
+            inv = self.inv[client.uid]
+            await inv.add_item("ny24_Loot_Coin", "lt", 10000)
+            await client.update_inv()
     
     async def update_level(self, cli, lvl):
         r = self.redis
@@ -195,7 +199,7 @@ class Server:
             await inv.add_item(item, "cls")
             if item in weared:
                 await inv.change_wearing(item, True)
-        await inv.add_item("oct23_Loot_Coin", "lt", 10000)
+        await inv.add_item("ny24_Loot_Coin", "lt", 10000)
         await inv.add_item("AvaCoin", "lt", 10000)
     
     async def get_appearance(self, uid):
