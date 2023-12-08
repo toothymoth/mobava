@@ -11,14 +11,14 @@ class Furn(Module):
         super().__init__()
         self.server = server
         self.bind = {"buy": self.buy, "save": self.save_room}
-        
+    
     async def buy(self, msg, client):
         item = msg["data"]["tpid"]
         type_ = "frn" if item in self.server.frn else "gm"
         await self.server.inv[client.uid].add_item(item, type_)
         await client.update_inv()
         await client.send(msg)
-        
+    
     def getOwner(self, room, uid):
         return room.split("_")[1] == str(uid)
     
@@ -41,7 +41,7 @@ class Furn(Module):
         await redis.rpush(f"rooms:{uid}:{room}:items:"
                           f"{item['tpid']}_{item['oid']}", item["x"],
                           item["y"], item["z"], item["d"])
-
+    
     async def del_furn(self, name, client):
         redis = self.server.redis
         uid = client.uid
@@ -62,13 +62,15 @@ class Furn(Module):
         await redis.delete(f"rooms:{uid}:{room}:items:{item}:options")
         await redis.srem(f"rooms:{uid}:{room}:items", item)
         await redis.delete(f"rooms:{uid}:{room}:items:{item}")
-
-    async def type_add(self, item, client):
+    
+    async def type_add(self, item, client, isInter=True):
         room = client.room.split("_")
         redis = self.server.redis
         uid = client.uid
         inv = self.server.inv[uid]
         await inv.take_item(item["tpid"])
+        if not isInter:
+            return
         items = await redis.smembers(f"rooms:{uid}:{room[2]}:items")
         if any(ext in item["tpid"].lower() for ext in ["wll", "wall"]):
             walls = []
@@ -76,13 +78,15 @@ class Furn(Module):
                 for room_item in items:
                     if wall in room_item.lower():
                         furn = await self.server.getFurn(room_item, client)
-                        await self.del_furn(furn, client)
-                        if room_item not in walls:
-                            walls.append(room_item)
-                        if len(walls) == 1:
-                            await inv.add_item("_".join(room_item.split("_")[:-1]), "frn")
-                            add_comfort = self.server.frn["_".join(room_item.split("_")[:-1])]["rating"]
-                            await self.server.redis.decrby(f"mob:{client.uid}:hrt", int(add_comfort or 0))
+                        if furn["x"] in (0.0, 13.0) and furn["y"] == 0.0 and \
+                            furn["z"] == 0.0 and furn["d"] in (3, 5):
+                            await self.del_furn(furn, client)
+                            if room_item not in walls:
+                                walls.append(room_item)
+                            if len(walls) == 1:
+                                await inv.add_item("_".join(room_item.split("_")[:-1]), "frn")
+                                add_comfort = self.server.frn["_".join(room_item.split("_")[:-1])]["rating"]
+                                await self.server.redis.decrby(f"mob:{client.uid}:hrt", int(add_comfort or 0))
             if 'oid' in item:
                 item['lid'] = item['oid']
                 del item['oid']
@@ -102,11 +106,13 @@ class Furn(Module):
             for floor in ["flr", "floor"]:
                 for room_item in items:
                     if floor in room_item.lower():
-                        furn = await self.server.getFurn(room_item,client)
-                        await self.del_furn(furn, client)
-                        await inv.add_item("_".join(room_item.split("_")[:-1]), "frn")
-                        add_comfort = self.server.frn["_".join(room_item.split("_")[:-1])]["rating"]
-                        await self.server.redis.decrby(f"mob:{client.uid}:hrt", int(add_comfort or 0))
+                        furn = await self.server.getFurn(room_item, client)
+                        if furn["x"] == 0.0 and furn["y"] == 0.0 and \
+                                furn["z"] == 0.0 and furn["d"] == 5:
+                            await self.del_furn(furn, client)
+                            await inv.add_item("_".join(room_item.split("_")[:-1]), "frn")
+                            add_comfort = self.server.frn["_".join(room_item.split("_")[:-1])]["rating"]
+                            await self.server.redis.decrby(f"mob:{client.uid}:hrt", int(add_comfort or 0))
             item["x"] = 0.0
             item["y"] = 0.0
             item["z"] = 0.0
@@ -117,7 +123,7 @@ class Furn(Module):
             await self.add_furn(item, client)
             add_comfort = self.server.frn[item["tpid"]]["rating"]
             await self.server.redis.incrby(f"mob:{client.uid}:hrt", int(add_comfort or 0))
-
+    
     async def replace_door(self, item, client):
         uid = client.uid
         room = client.room.split("_")
@@ -151,7 +157,7 @@ class Furn(Module):
                      "z": float(data[2]), "d": int(data[3]),
                      "rid": rid})
         await self.add_furn(item, client)
-        
+    
     async def save_room(self, msg, client):
         if not self.getOwner(client.room, client.uid):
             return
@@ -159,7 +165,12 @@ class Furn(Module):
         for furn in new_room:
             type_ = furn["t"]
             if type_ == 0:
-                await self.type_add(furn, client)
+                IsInterior = True
+                for f in new_room:
+                    if f["tpid"] == furn["tpid"] and \
+                            f["oid"] == furn["oid"] and f["t"] == 1:
+                        IsInterior = False
+                await self.type_add(furn, client, IsInterior)
             elif type_ == 1:
                 isNew = True
                 for olditem in await self.server.get_room(client.room):
