@@ -42,6 +42,9 @@ class Location:
             await self.server.send_everybody(client.room, msg)
         elif subcmd == "ra":
             await refresh_avatar(self.server, client)
+        elif subcmd == "kc":
+            if client.uid in client.room.split("_")[1]:
+                await self.server.online[msg["data"]["tmid"]].send(msg)
         elif subcmd == "rfr":
             room_items = await self.server.get_room(client.room, 2)
             await self.server.send_everybody(client.room, {
@@ -80,7 +83,7 @@ async def gen_plr(server, uid):
         pos = server.online[uid].pos
         loc = server.online[uid].room
     plr["locinfo"] = {'st': 0, 'at': action, 'd': 4, 'x': pos[0], 'y': pos[1], 'l': loc}
-    plr["usrinf"] = {'sid': int(uid), 'rl': 4, 'lng': '', 'lcl': 'RU', 'al': 99}
+    plr["usrinf"] = {'sid': 1, 'rl': 4, 'lng': 'freeloveEU', 'lcl': 'RU', 'al': 99} # {'sid': int(uid), 'rl': 4, 'lng': '', 'lcl': 'RU', 'al': 99}
     plr["ci"] = await city_info(server, uid)
     plr["onl"] = uid in server.online
     plr["clths"] = await server.get_clothes(uid, 2)
@@ -109,12 +112,24 @@ async def city_info(server, uid):
     ci["crt"] = await r.incrby(f"mob:{uid}:crt", 0)
     ci["hrt"] = await r.incrby(f"mob:{uid}:hrt", 0)
     ci["lvt"] = await r.incrby(f"mob:{uid}:lvt", 0)
-    ci["dr"] = bool(await r.incrby(f"mob:{uid}:dr", 0))
+    ci["dr"] = not bool(await r.incrby(f"mob:{uid}:dr", 0))
     ci["vexp"] = str(await r.incrby(f"mob:{uid}:vip", 0))
     ci["vip"] = False if ci["vexp"] == "0" else True
-    ci["ceid"] = 0
-    ci["cmid"] = 0
-    ci["nl"] = 0
+    rl = server.lib["rl"]
+    relations = await server.redis.smembers(f"rl:{uid}")
+    cmid = 0
+    ceid = 0
+    for link in relations:
+        relation = await rl._get_relation(uid, link)
+        if not relation:
+            continue
+        if relation["rlt"]["s"] // 10 == 7:
+            cmid = relation["uid"]
+        if relation["rlt"]["s"] // 10 == 6:
+            ceid = relation["uid"]
+    ci["ceid"] = ceid
+    ci["cmid"] = cmid
+    # ci["nl"] = 0
     ci["lv"] = get_lvl(ci["exp"])
     return ci
 
